@@ -36,7 +36,7 @@ public:
   Socket accept();
   template<class Handler> void async_accept(Handler h);
   explicit operator bool() const;
-  void operator=(ServerSocket) = delete;
+  ServerSocket &operator=(const ServerSocket &ss);
 
 private:
   ::std::atomic<int> *ref;
