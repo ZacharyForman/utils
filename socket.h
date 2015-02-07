@@ -5,6 +5,8 @@
 #error "Requires C++11 features"
 #else
 
+#include <atomic>
+
 namespace utils {
 
 class Socket {
@@ -22,7 +24,7 @@ public:
 private:
   Socket(int sock);
 
-  int *ref;
+  ::std::atomic<int> *ref;
   int sock;
 };
 
@@ -37,7 +39,7 @@ public:
   void operator=(ServerSocket) = delete;
 
 private:
-  int *ref;
+  ::std::atomic<int> *ref;
   int sock;
 };
 
