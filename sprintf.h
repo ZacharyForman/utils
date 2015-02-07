@@ -31,7 +31,8 @@ void sprintf(::std::stringstream &ret, const char *fmt)
 }
 
 template<typename T, typename... Args>
-void sprintf(::std::stringstream &ret, const char *fmt, const T &param, Args... args)
+void sprintf(::std::stringstream &ret, const char *fmt,
+             const T &param, Args... args)
 {
   while (*fmt) {
     if (*fmt == '%') {
