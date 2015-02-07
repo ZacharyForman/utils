@@ -5,11 +5,11 @@
 #error "Requires C++11 features"
 #else
 
+#include "net_error.h"
 #include "socket.h"
 
 #include <atomic>
 #include <mutex>
-#include <thread>
 
 namespace utils {
 class ServerSocket {
@@ -24,9 +24,12 @@ public:
 
   ServerSocket &operator=(const ServerSocket &ss);
 
+  Error error() const;
+
 private:
   ::std::mutex m;
   ::std::atomic<int> *ref;
+  Error err;
   int sock;
 };
 

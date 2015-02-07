@@ -1,3 +1,4 @@
+#include "net_error.h"
 #include "socket.h"
 
 #include <arpa/inet.h>
@@ -19,6 +20,7 @@ Socket::Socket(const Socket &s)
 {
   sock = s.sock;
   ref = s.ref;
+  err = s.err;
   if (ref != nullptr) (*ref)++;
 }
 
@@ -26,6 +28,7 @@ Socket::Socket(const char *host, int port)
 {
   struct sockaddr_in addr;
   memset((char *)&addr,0,sizeof(addr));
+
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = inet_addr(host);
@@ -34,8 +37,10 @@ Socket::Socket(const char *host, int port)
   if (connect(sock, (sockaddr*)&addr, sizeof(addr)) < 0) goto err;
 
   ref = new ::std::atomic<int>(1);
+  err = OK;
   return;
 err:
+  err = net_err();
   sock = -1;
   ref = nullptr;
 }
@@ -52,18 +57,26 @@ Socket::~Socket()
 int Socket::write(const char *buf, int len)
 {
   ::std::lock_guard<::std::mutex> lock(m);
-  return ::write(sock, buf, len);
+  len = ::write(sock, buf, len);
+  if (len < 0) {
+    err = net_err();
+  }
+  return len;
 }
 
 int Socket::read(char *buf, int len)
 {
   ::std::lock_guard<::std::mutex> lock(m);
-  return ::read(sock, buf, len);
+  len = ::read(sock, buf, len);
+  if (len < 0) {
+    err = net_err();
+  }
+  return len;
 }
 
 Socket::operator bool() const
 {
-  return sock > 0;
+  return !err;
 }
 
 Socket &Socket::operator=(const Socket &s)
@@ -76,20 +89,27 @@ Socket &Socket::operator=(const Socket &s)
 
   sock = s.sock;
   ref = s.ref;
+  err = s.err;
   if (ref != nullptr) (*ref)++;
 }
 
-Socket::Socket(int s)
+Socket::Socket(int s, Error e)
 {
   if (s < 0) goto err;
   sock = s;
   ref = new ::std::atomic<int>(1);
+  err = OK;
   return;
 err:
+  err = e;
   sock = -1;
   ref = nullptr;
 }
 
+Error Socket::error() const
+{
+  return err;
+}
 
 } //utils
 

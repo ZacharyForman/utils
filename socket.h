@@ -5,6 +5,8 @@
 #error "Requires C++11 features"
 #else
 
+#include "net_error.h"
+
 #include <atomic>
 #include <mutex>
 
@@ -25,11 +27,14 @@ public:
 
   Socket &operator=(const Socket &s);
 
+  Error error() const;
+
 private:
-  Socket(int sock);
+  Socket(int sock, Error e = OK);
 
   ::std::mutex m;
   ::std::atomic<int> *ref;
+  Error err;
   int sock;
 };
 

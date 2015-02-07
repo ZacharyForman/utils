@@ -2,6 +2,7 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <future>
 
 #define BUF_LEN 4096
 
@@ -10,12 +11,6 @@ int main(int argc, char **argv)
   int port = 8080;
   if (argc > 1) {
     port = atoi(argv[1]);
-  }
-
-  utils::ServerSocket ss(port);
-  if (!ss) {
-    puts("Error");
-    return 1;
   }
 
   const auto handler = [](utils::Socket s) {
@@ -27,8 +22,6 @@ int main(int argc, char **argv)
     s.write(buf, len);
   };
 
-  for (;;) {
-    utils::Socket s = ss.accept();
-    handler(s);
-  }
+  std::future<utils::Error> f = utils::listen_and_serve(port, 5, handler);
+  printf("Result was: %d\n", f.get());
 }
