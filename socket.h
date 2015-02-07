@@ -6,6 +6,7 @@
 #else
 
 #include <atomic>
+#include <mutex>
 
 namespace utils {
 
@@ -14,31 +15,20 @@ public:
   friend class ServerSocket;
 
   Socket(const Socket &s);
-  explicit Socket(const char *address, const char *port);
+  explicit Socket(const char *host, int port);
   ~Socket();
+
   int write(const char *buffer, int length);
   int read(char *buffer, int length);
+
   explicit operator bool() const;
+
   Socket &operator=(const Socket &s);
 
 private:
   Socket(int sock);
 
-  ::std::atomic<int> *ref;
-  int sock;
-};
-
-class ServerSocket {
-public:
-  ServerSocket(const ServerSocket &s);
-  explicit ServerSocket(const char *port);
-  ~ServerSocket();
-  Socket accept();
-  template<class Handler> void async_accept(Handler h);
-  explicit operator bool() const;
-  ServerSocket &operator=(const ServerSocket &ss);
-
-private:
+  ::std::mutex m;
   ::std::atomic<int> *ref;
   int sock;
 };
