@@ -8,6 +8,18 @@
 #include <sstream>
 #include <string>
 
+/// Utility macro to declare a variable and add it to an ArgList.
+/// Usage: int ARG(size, 5, args, "--size", "The size of an apple");
+///   var: The variable to declare.
+///   value: The default value of the argument.
+///   arglist: The ArgList to add to.
+///   ...0: The expected flag.
+///   ...1: Information about the flag, printed if help is requested.
+///   ...[2]: If the argument is required for success of the program.
+#define ARG(var, value, arglist, ...) \
+  var = value; \
+  arglist.add_arg(var, __VA_ARGS__)
+
 namespace utils {
 
 /// Returns a generic error message for the given type.
