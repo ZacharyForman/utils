@@ -8,6 +8,27 @@
 #include <sstream>
 #include <string>
 
+/// Collection of classes and other nifty utilities to perform argument
+/// parsing and simplify the process of handling command line arguments.
+
+/// Example usage:
+///   int main(int argc, const char **argv)
+///   {
+///     utils::ArgList args;
+///     bool ARG(verbose, false, args, "-v",
+///              "Determines if verbose output is shown.");
+///     std::string ARG(filepath, "", args, "--path", "Path to search");
+///     int remainder = args.parse_args(argc, argv);
+///     std::string search_term = argv[remainder];
+///     for (int i = remainder + 1; i < argc; i++) {
+///       if (verbose) {
+///         std::cout << "Searching " << argv[i] << " for "
+///                   << search_term << "." << std::endl;
+///       }
+///       search(argv[i], search_term);
+///     }
+///   }
+
 /// Utility macro to declare a variable and add it to an ArgList.
 /// Usage: int ARG(size, 5, args, "--size", "The size of an apple");
 ///   var: The variable to declare.
@@ -128,7 +149,8 @@ class ArgList {
 public:
   /// Constructs an ArgList with the given help flag.
   ///   help_flag: The help flag to use. Defaults to --help.
-  ArgList(std::string help_flag = "--help");
+  ///   break_flag: The flag to stop parsing args. Defaults to --.
+  ArgList(std::string help_flag = "--help", std::string break_flag = "--");
 
   /// Adds an argument to this ArgList.
   /// Returns true if another argument with the given flag is not registered.
@@ -142,7 +164,7 @@ public:
 
   /// Parses arguments from the argument list provided.
   /// Returns the last argument number considered.
-  /// Stops parsing arguments on receipt of the argument --.
+  /// Stops parsing arguments on receipt of the argument break_flag.
   ///   argc: The number of arguments, as per in main.
   ///   argv: The argument vector, where the zeroth argument is ignored.
   int parse_args(int argc, const char **argv);
@@ -158,10 +180,12 @@ private:
   std::map<std::string, std::unique_ptr<internal::Arg>> arguments;
   /// Flag that must be given to receive help text, --help by default.
   const std::string help_flag;
+  /// Flag that must be given to stop parsing args, -- by default.
+  const std::string break_flag;
 };
 
-ArgList::ArgList(std::string help_flag)
-    : help_flag(help_flag) {}
+ArgList::ArgList(std::string help_flag, std::string break_flag)
+    : help_flag(help_flag), break_flag(break_flag) {}
 
 template<typename T>
 bool ArgList::add_arg(T& val, std::string flag, std::string help_text,
@@ -178,10 +202,15 @@ bool ArgList::add_arg(T& val, std::string flag, std::string help_text,
 
 int ArgList::parse_args(int argc, const char **argv)
 {
-  for (int i = 1; i < argc; i++) {
+  int i;
+  for (i = 1; i < argc; i++) {
     if (help_flag == argv[i]) {
       help();
       exit(0);
+    }
+
+    if (break_flag == argv[i]) {
+      break;
     }
 
     if (arguments.find(argv[i]) == arguments.end()) {
@@ -209,6 +238,7 @@ int ArgList::parse_args(int argc, const char **argv)
       exit(1);
     }
   }
+  return i;
 }
 
 void ArgList::help()
