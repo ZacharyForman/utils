@@ -12,9 +12,10 @@
 /// parsing and simplify the process of handling command line arguments.
 
 /// Example usage:
+///   \code{.cpp}
 ///   int main(int argc, const char **argv)
 ///   {
-///     utils::ArgList args;
+///     ArgList args;
 ///     bool ARG(verbose, false, args, "-v",
 ///              "Determines if verbose output is shown.");
 ///     std::string ARG(filepath, "", args, "--path", "Path to search");
@@ -28,26 +29,25 @@
 ///       search(argv[i], search_term);
 ///     }
 ///   }
+///   \endcode
 
 /// Utility macro to declare a variable and add it to an ArgList.
-/// Usage: int ARG(size, 5, args, "--size", "The size of an apple");
-///   var: The variable to declare.
-///   value: The default value of the argument.
-///   arglist: The ArgList to add to.
-///   ...0: The expected flag.
-///   ...1: Information about the flag, printed if help is requested.
-///   ...[2]: If the argument is required for success of the program.
+/// Usage: \code{.cpp} int ARG(size, 5, args, "--size", "The size of an apple"); \endcode
+///   \param var: The variable to declare.
+///   \param value: The default value of the argument.
+///   \param arglist: The ArgList to add to.
+///   \param ...0: The expected flag.
+///   \param ...1: Information about the flag, printed if help is requested.
+///   \param ...[2]: If the argument is required for success of the program.
 #define ARG(var, value, arglist, ...) \
   var = value; \
   arglist.add_arg(var, __VA_ARGS__)
 
-namespace utils {
-
 /// Returns a generic error message for the given type.
-///   flag_name: The flag provided.
-///   argument: The argument provided.
+///   \param flag_name: The flag provided.
+///   \param argument: The argument provided.
 template<typename T>
-std::string arg_error_text(std::string flag_name, std::string argument)
+inline std::string arg_error_text(std::string flag_name, std::string argument)
 {
   return "error: `" + argument + "' is a bad argument for " + flag_name + ".";
 }
@@ -58,19 +58,21 @@ namespace internal {
 class Arg {
 public:
   /// Constructs an Arg.
-  ///   flag: The command line flag given, e.g. -l or --height.
-  ///   help_text: Text printed when the --help arg is received.
-  ///   required: If the argument is required by the program.
-  Arg(std::string flag, std::string help_text, bool required = false);
+  ///   \param flag: The command line flag given, e.g. -l or --height.
+  ///   \param help_text: Text printed when the --help arg is received.
+  ///   \param required: If the argument is required by the program.
+  inline Arg(std::string flag, std::string help_text, bool required = false);
 
   /// Parses the value from args. Modifies this Arg's stored variable.
   /// Returns how many arguments were consumed, or -1 on error.
-  ///   args: The arguments to consume.
-  ///   arg: The starting argument to consider.
+  ///   \param args: The arguments to consume.
+  ///   \param arg: The starting argument to consider.
   virtual int parse_value(const char **args, int arg) = 0;
 
   /// Returns a string containing the current value of this argument.
   virtual std::string value() const = 0;
+
+  virtual ~Arg() { }
 
   /// The command line flag given, e.g. -l or --height.
   const std::string flag;
@@ -80,7 +82,7 @@ public:
   bool ok;
 };
 
-Arg::Arg(std::string flag, std::string help_text, bool required)
+inline Arg::Arg(std::string flag, std::string help_text, bool required)
   : flag(flag), help_text(help_text), ok(!required) {}
 
 /// Internal class that actually stores the value of an argument.
@@ -90,10 +92,10 @@ template<typename T>
 class TypedArg final : public Arg {
 public:
   /// Constructs a TypedArg.
-  ///   var: A reference to the variable the argument should be stored in.
-  ///   flag: The command line flag given, e.g. -l or --height.
-  ///   help_text: Text printed when the --help arg is received.
-  ///   required: If the argument is required by the program.
+  ///   \param var: A reference to the variable the argument should be stored in.
+  ///   \param flag: The command line flag given, e.g. -l or --height.
+  ///   \param help_text: Text printed when the --help arg is received.
+  ///   \param required: If the argument is required by the program.
   TypedArg(T &var, std::string flag, std::string help_text,
            bool required = false);
 
@@ -105,12 +107,12 @@ private:
 };
 
 template<typename T>
-TypedArg<T>::TypedArg(T &var, std::string flag, std::string help_text,
+inline TypedArg<T>::TypedArg(T &var, std::string flag, std::string help_text,
                       bool required)
   : Arg(flag, help_text, required), var(var) {}
 
 template<typename T>
-int TypedArg<T>::parse_value(const char **args, int arg)
+inline int TypedArg<T>::parse_value(const char **args, int arg)
 {
   if (arg < 0) {
     return -1;
@@ -125,7 +127,7 @@ int TypedArg<T>::parse_value(const char **args, int arg)
 }
 
 template<>
-int TypedArg<bool>::parse_value(const char **args, int arg)
+inline int TypedArg<bool>::parse_value(const char **args, int arg)
 {
   var = !var;
   ok = true;
@@ -133,14 +135,14 @@ int TypedArg<bool>::parse_value(const char **args, int arg)
 }
 
 template<typename T>
-std::string TypedArg<T>::value() const
+inline std::string TypedArg<T>::value() const
 {
   std::stringstream ss;
   ss << var;
   return ss.str();
 }
 
-} // internal
+} /// internal
 
 /// Class that contains a list of arguments.
 /// Add arguments to the list using ArgList::add_arg(), then parse
@@ -148,29 +150,29 @@ std::string TypedArg<T>::value() const
 class ArgList {
 public:
   /// Constructs an ArgList with the given help flag.
-  ///   help_flag: The help flag to use. Defaults to --help.
-  ///   break_flag: The flag to stop parsing args. Defaults to --.
-  ArgList(std::string help_flag = "--help", std::string break_flag = "--");
+  ///   \param help_flag: The help flag to use. Defaults to --help.
+  ///   \param break_flag: The flag to stop parsing args. Defaults to --.
+  inline ArgList(std::string help_flag = "--help", std::string break_flag = "--");
 
   /// Adds an argument to this ArgList.
   /// Returns true if another argument with the given flag is not registered.
-  ///   val: The variable to store the argument in.
-  ///   flag: The expected flag.
-  ///   help_text: Information about the flag, printed if help is requested.
-  ///   required: If the argument is required for success of the program.
+  ///   \param val: The variable to store the argument in.
+  ///   \param flag: The expected flag.
+  ///   \param help_text: Information about the flag, printed if help is requested.
+  ///   \param required: If the argument is required for success of the program.
   template<typename T>
-  bool add_arg(T& val, std::string flag, std::string help_text,
+  inline bool add_arg(T& val, std::string flag, std::string help_text,
                bool required = false);
 
   /// Parses arguments from the argument list provided.
   /// Returns the last argument number considered.
   /// Stops parsing arguments on receipt of the argument break_flag.
-  ///   argc: The number of arguments, as per in main.
-  ///   argv: The argument vector, where the zeroth argument is ignored.
-  int parse_args(int argc, const char **argv);
+  ///   \param argc: The number of arguments, as per in main.
+  ///   \param argv: The argument vector, where the zeroth argument is ignored.
+  inline int parse_args(int argc, const char **argv);
 
   /// Prints associated help information to stderr.
-  void help();
+  inline void help();
 
   static const bool required = true;
   static const bool optional = false;
@@ -184,11 +186,11 @@ private:
   const std::string break_flag;
 };
 
-ArgList::ArgList(std::string help_flag, std::string break_flag)
+inline ArgList::ArgList(std::string help_flag, std::string break_flag)
     : help_flag(help_flag), break_flag(break_flag) {}
 
 template<typename T>
-bool ArgList::add_arg(T& val, std::string flag, std::string help_text,
+inline bool ArgList::add_arg(T& val, std::string flag, std::string help_text,
                       bool required)
 {
   if (arguments.find(flag) != arguments.end()) {
@@ -200,7 +202,7 @@ bool ArgList::add_arg(T& val, std::string flag, std::string help_text,
   return true;
 }
 
-int ArgList::parse_args(int argc, const char **argv)
+inline int ArgList::parse_args(int argc, const char **argv)
 {
   int i;
   for (i = 1; i < argc; i++) {
@@ -241,19 +243,39 @@ int ArgList::parse_args(int argc, const char **argv)
   return i;
 }
 
-void ArgList::help()
+inline void ArgList::help()
 {
+  unsigned l1 = 0;
+  unsigned l2 = 0;
+  for (auto& arg : arguments) {
+    std::stringstream ss;
+    ss << " " << arg.second->flag << " ";
+    if (ss.str().length() > l1) {
+      l1 = ss.str().length();
+    }
+  }
+  l1++;
   for (auto& arg : arguments) {
     std::stringstream ss;
     ss << "  " << arg.second->flag;
-    ss << std::string(std::max(1u, 20-ss.str().length()), ' ');
+    ss << std::string(std::max(std::string::size_type(1), l1-ss.str().length()), ' ');
     ss << "= " << arg.second->value();
-    ss << std::string(std::max(1u, 30-ss.str().length()), ' ');
+    if (ss.str().length() > l2) {
+      l2 = ss.str().length();
+    }
+    ss << std::string(" ");
+    ss << arg.second->help_text << std::endl;
+  }
+  l2++;
+  for (auto& arg : arguments) {
+    std::stringstream ss;
+    ss << "  " << arg.second->flag;
+    ss << std::string(std::max(std::string::size_type(1), l1-ss.str().length()), ' ');
+    ss << "= " << arg.second->value();
+    ss << std::string(std::max(std::string::size_type(1), l2-ss.str().length()), ' ');
     ss << arg.second->help_text << std::endl;
     std::cerr << ss.str();
   }
 }
-
-} // utils
 
 #endif // ARGUMENTS_H
